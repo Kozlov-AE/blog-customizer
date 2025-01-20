@@ -3,10 +3,11 @@ import { Select } from 'src/ui/select';
 import { Button } from 'src/ui/button';
 import { RadioGroup } from 'src/ui/radio-group';
 import { Separator } from 'src/ui/separator';
+import { Text } from 'src/ui/text';
 
 import clsx from 'clsx';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 
 import styles from './ArticleParamsForm.module.scss';
 
@@ -18,6 +19,7 @@ import {
 	fontFamilyOptions,
 	fontSizeOptions,
 } from 'src/constants/articleProps';
+import { useClose } from './hooks/useClose';
 
 export type ArticleParamsProps = {
 	resetButtonClicked: () => void;
@@ -26,11 +28,19 @@ export type ArticleParamsProps = {
 };
 
 export const ArticleParamsForm = (props: ArticleParamsProps) => {
-	const [isOpen, setIsOpen] = useState(false);
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [state, setState] = useState(props.articleParamsState);
+	// создаем `ref` для нашей формы и указываем его на внешнем блоке с формой
+	const formRef = useRef<HTMLFormElement>(null);
+
+	useClose({
+		isOpen: isMenuOpen,
+		onClose: closeMenu,
+		rootRef: formRef,
+	});
 
 	function handleClick(): void {
-		setIsOpen(!isOpen);
+		setIsMenuOpen(!isMenuOpen);
 	}
 
 	function handleApplyButtonClick(event: FormEvent): void {
@@ -43,27 +53,29 @@ export const ArticleParamsForm = (props: ArticleParamsProps) => {
 		props.resetButtonClicked();
 	}
 
-	document.addEventListener('mousedown', (event: MouseEvent) => {
-		const target = event.target as HTMLElement;
-		if (isOpen && !target.closest(`.${styles.container}`)) {
-			setIsOpen(false);
-		}
-	});
+	function closeMenu(): void {
+		setIsMenuOpen(false);
+	}
 
 	return (
 		<>
 			<ArrowButton
-				isOpen={isOpen}
+				isOpen={isMenuOpen}
 				onClick={() => {
 					handleClick();
 				}}
 			/>
 			<aside
-				className={clsx(styles.container, { [styles.container_open]: isOpen })}>
-				<form className={styles.form} onSubmit={handleApplyButtonClick}>
-					<header>
-						<h2 className={styles.title}>Задайте параметры</h2>
-					</header>
+				className={clsx(styles.container, {
+					[styles.container_open]: isMenuOpen,
+				})}>
+				<form
+					ref={formRef}
+					className={styles.form}
+					onSubmit={handleApplyButtonClick}>
+					<Text as='h2' weight={800} size={31} uppercase={true}>
+						Задайте параметры
+					</Text>
 					<Select
 						title='шрифт'
 						options={fontFamilyOptions}
